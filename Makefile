@@ -4,8 +4,7 @@ sources += tests/test_linked_list.c
 sources += tests/test_slab_allocator.c
 objects = $(sources:.c=.o)
 LDFLAGS = -lpthread
-INCLUDE = -I./include/linked_list
-INCLUDE += -I./include/slab_allocator
+INCLUDE = -I./include
 INCLUDE += -I../ihct/src
 CFLAGS = -g -Wall -std=gnu99 $(INCLUDE)
 CC = gcc

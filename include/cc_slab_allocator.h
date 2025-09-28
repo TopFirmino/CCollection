@@ -1,83 +1,64 @@
+/* 
+A minamalistic implementation of a slab allocator with only static allocation. Instead of returning an address as usually, this allocator only works with offsets.
+This particulary useful for handling external memory devices and for handling allocations for an arrays of elements.
+
+*/
+
+
 /* cc_slab_allocator.h */
 #ifndef CC_SLAB_ALLOCATOR_H
 #define CC_SLAB_ALLOCATOR_H
 
-#include <stdint.h>
+#include <stdlib.h>
+
+/* Return Type */                                                                                          
+typedef enum {                                                                                             
+    CC_SLAB_ALLOCATOR_SUCCESS = 0,                                                                         
+    CC_SLAB_ALLOCATOR_NOT_ALIGNED,                                                                         
+    CC_SLAB_ALLOCATOR_OUT_OF_RANGE,                                                                        
+    CC_SLAB_ALLOCATOR_NOT_ALLOCATED, 
+} CC_SLAB_AllocatorResult;  
 
 
-/* T is the Item Type */                                                                                   \
-#define CC_SLAB_ALLOCATOR_DEFINE( ITEM_T, NUMBER )                                                         \
-typedef struct {                                                                                           \
-    ITEM_T *base;                                                                                          \
-    uint32_t first;                                                                                        \
-    uint32_t *freelist;                                                                                    \
-    uint32_t max_length;                                                                                   \
-    uint32_t size;                                                                                         \
-} ITEM_T##Allocator;                                                                                       \
-                                                                                                           \
-/* Constants */                                                                                            \
-const static uint32_t ITEM_T##ALLOCATOR_LAST_IDX = -1;                                                     \
-const static uint32_t ITEM_T##ALLOCATOR_DETACHED_IDX = -2;                                                 \
-                                                                                                           \
-/* Variables */                                                                                            \
-static uint32_t ITEM_T##ALLOCATOR_freelist[NUMBER];                                                        \
-                                                                                                           \
-/* Return Type */                                                                                          \
-typedef enum {                                                                                             \
-    ITEM_T##ALLOCATOR_SUCCESS = 0,                                                                         \
-    ITEM_T##ALLOCATOR_NOT_ALIGNED,                                                                         \
-    ITEM_T##ALLOCATOR_OUT_OF_RANGE,                                                                        \
-    ITEM_T##ALLOCATOR_NOT_ALLOCATED,                                                                       \
-} ITEM_T##AllocatorResult;                                                                                 \
-                                                                                                           \
-/* APIs */                                                                                                 \
-static inline void ITEM_T##Allocator_init(ITEM_T##Allocator *a, ITEM_T *b )                                \
-{                                                                                                          \
-    uint32_t i = 0;                                                                                        \
-                                                                                                           \
-    a->base = b;                                                                                           \
-    a->freelist = ITEM_T##ALLOCATOR_freelist;                                                              \
-    a->max_length = NUMBER;                                                                                \
-    a->first = 0;                                                                                          \
-                                                                                                           \
-    for ( i = 0; i < NUMBER; ++i )                                                                         \
-    {                                                                                                      \
-        a->freelist[i] = i+1;                                                                              \
-    }                                                                                                      \
-                                                                                                           \
-    a->freelist[NUMBER-1] = ITEM_T##ALLOCATOR_LAST_IDX;                                                    \
-}                                                                                                          \
-                                                                                                           \
-static inline ITEM_T* ITEM_T##Allocator_allocate(ITEM_T##Allocator *a) {                                   \
-                                                                                                           \
-    uint32_t detached_index = a->first;                                                                    \
-                                                                                                           \
-    if ( a->first == ITEM_T##ALLOCATOR_LAST_IDX )                                                          \
-    {                                                                                                      \
-        return 0;                                                                                          \
-    }                                                                                                      \
-                                                                                                           \
-    a->first = a->freelist[a->first];                                                                      \
-    --a->size;                                                                                             \
-    a->freelist[detached_index] = ITEM_T##ALLOCATOR_DETACHED_IDX;                                          \
-                                                                                                           \
-    return &(a->base[detached_index]);                                                                     \
-}                                                                                                          \
-                                                                                                           \
-static inline ITEM_T##AllocatorResult ITEM_T##Allocator_free( ITEM_T##Allocator *a, ITEM_T *item)          \
-{                                                                                                          \
-    uint32_t offset = item - a->base;                                                                      \
-                                                                                                           \
-                                                                                                           \
-    if ( offset<0 || offset>=a->max_length ){ return ITEM_T##ALLOCATOR_OUT_OF_RANGE; }                     \
-                                                                                                           \
-    if ( a->freelist[offset] != ITEM_T##ALLOCATOR_DETACHED_IDX ){ return ITEM_T##ALLOCATOR_NOT_ALLOCATED; }\
-                                                                                                           \
-    a->freelist[offset] = a->first;                                                                        \
-    a->first = offset;                                                                                     \
-    ++a->size;                                                                                             \
-                                                                                                           \
-    return ITEM_T##ALLOCATOR_SUCCESS;                                                                      \
-}                                                                                                          
-                                                                                                                          
+typedef struct {
+    size_t first;                                                                                        
+    size_t *freelist;                                                                                  
+    size_t size;                                                                                   
+} CC_SLAB_Allocator;
+
+
+/*  
+    Init function for the slab allocator. 
+
+    Parameters:
+        CC_SLAB_Allocator* a: is a pointer to the slab allocator. 
+        size_t *freelist: if a point to an array of size_t elements of size "size" 
+        size_t size: is the maximum number of memory slots. 
+
+    In order to keep the memory allocation static it is necessary for the user to allocate the memory for internal data structures by its own.
+*/
+void cc_slab_alloctor_init( CC_SLAB_Allocator *a, size_t *freelist, size_t size);
+
+/*  
+    Allocate function for the slab allocator.
+    Parameters:
+        CC_SLAB_Allocator* a: is a pointer to the slab allocator. 
+    
+    This function returns a free memory slot.
+*/
+size_t cc_slab_allocator_alloc( CC_SLAB_Allocator *a);
+
+
+/*
+    Free function for the slab allocator.
+
+    Parameters:
+        CC_SLAB_Allocator* a: is a pointer to the slab allocator. 
+        size_t index: the index of the memory block to free.
+        
+    Returns a CC_SLAB_AllocatorResult.
+*/
+CC_SLAB_AllocatorResult cc_slab_allocator_free( CC_SLAB_Allocator *a, size_t index);
+
+
 #endif

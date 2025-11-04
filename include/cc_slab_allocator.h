@@ -1,7 +1,6 @@
 /* 
-A minamalistic implementation of a slab allocator with only static allocation. Instead of returning an address as usually, this allocator only works with offsets.
-This particulary useful for handling external memory devices and for handling allocations for an arrays of elements.
-
+A minimalist implementation of a slab allocator with only static allocation. Instead of returning an address as usually, this allocator only works with offsets.
+This is particularly useful for handling external memory devices and for handling allocations for an arrays of elements.
 */
 
 
@@ -37,7 +36,7 @@ typedef struct {
 
     In order to keep the memory allocation static it is necessary for the user to allocate the memory for internal data structures by its own.
 */
-void cc_slab_alloctor_init( CC_SLAB_Allocator *a, size_t *freelist, size_t size);
+void cc_slab_allocator_init( CC_SLAB_Allocator *a, size_t *freelist, size_t size);
 
 /*  
     Allocate function for the slab allocator.

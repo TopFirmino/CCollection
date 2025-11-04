@@ -3,7 +3,7 @@
 #define CC_SLAB_ALLOCATOR_LAST_INDEX -1         /* Represents the last index of the arraylist. Used in order to undestand if the memory is over. */
 #define CC_SLAB_ALLOCATOR_DETACHED_INDEX -2     /* Represents the index for a detached index. Used to understand if a slot is already used */
 
-void cc_slab_alloctor_init( CC_SLAB_Allocator *a, size_t *freelist, size_t size)
+void cc_slab_allocator_init( CC_SLAB_Allocator *a, size_t *freelist, size_t size)
 {
     size_t i = 0;
     
